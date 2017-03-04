@@ -22,7 +22,7 @@
 
       var map = initMap(),
           realtime = L.realtime({
-              url: 'http://127.0.0.1:8000/api/conflicts/get_conflicts',
+              url: 'https://emergency-api.scalingo.io/api/conflicts/get_conflicts',
               crossOrigin: true,
               type: 'json'
           }, {
