@@ -1,0 +1,75 @@
+<html>
+  <head>
+    <title>Incident Analyzer</title>
+    <!-- Generic entries -->
+    <link rel="stylesheet" href="leaflet/leaflet.css"/>
+    <link rel="stylesheet" href="routing/leaflet/leaflet-routing-machine.css" />
+    <script src="leaflet/leaflet.js"></script>
+    <script src="routing/leaflet/leaflet-routing-machine.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <!-- Custom entries -->
+    <link rel="stylesheet" href="styles/styles.css"/>
+    <script src="leaflet/custom-leaflet.js"></script>
+    <script src="leaflet/live/leaflet-live.js"></script>
+    <!-- script src="leaflet/routing/route.js"></script -->
+    <script src="processing/api.js"></script>
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <script>
+      var devicesLayer = L.layerGroup();
+
+      var map = initMap(),
+          realtime = L.realtime({
+              url: 'http://127.0.0.1:8000/api/conflicts/get_conflicts',
+              crossOrigin: true,
+              type: 'json'
+          }, {
+              interval: 1 * 1000,
+              pointToLayer: function (feature, latlng) {
+                if(feature.properties.radius == null) {
+                  var marker;
+                  if(feature.properties.conflict == 0) {
+                    marker = L.marker(latlng, {icon: new setupGreenIcon()});
+                  }
+                  else {
+                    marker = L.marker(latlng, {icon: new setupRedIcon()});
+                  }
+                  marker.bindPopup('Name: ' + feature.properties.id +
+                    '<br/> Lat: ' + feature.geometry.coordinates[1] +
+                    '<br/> Lng: ' + feature.geometry.coordinates[0]);
+                  marker.addTo(devicesLayer);
+                  return marker;
+                }
+                else {
+                  circle = L.circle(latlng, {
+                    color: colorPick(0),
+                    fillColor: colorPick(0),
+                    fillOpacity: 0.5,
+                    radius: feature.properties.radius
+                  });
+                  circle.bindPopup('Name: ' + feature.properties.id +
+                     '<br/> Lat: ' + feature.geometry.coordinates[1] +
+                     '<br/> Lng: ' + feature.geometry.coordinates[0]);
+                  circle.addTo(devicesLayer);
+                  return circle;
+                }
+              }
+          }).addTo(map);
+
+      realtime.on('update', function(e) {
+        updateFeatureIcon = function (fId) {
+          var feature = e.features[fId];
+          if(feature.properties.conflict == 0) {
+            realtime.getLayer(fId).setIcon(new setupGreenIcon());
+          }
+          else {
+            realtime.getLayer(fId).setIcon(new setupRedIcon());
+          }
+        };
+        Object.keys(e.update).forEach(updateFeatureIcon);
+      });
+    </script>
+  </body>
+</html>
